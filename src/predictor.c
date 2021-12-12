@@ -6,6 +6,7 @@
 //  described in the README                               //
 //========================================================//
 #include <stdio.h>
+#include <math.h>
 #include "predictor.h"
 
 //
@@ -37,7 +38,11 @@ int verbose;
 //TODO: Add your own Branch Predictor data structures here
 //
 
-
+uint32_t branchHistoryRegister;
+uint16_t bufferSize;
+uint8_t histBits = 13;
+uint32_t counter_idx;
+uint8_t* counters;
 //------------------------------------//
 //        Predictor Functions         //
 //------------------------------------//
@@ -50,6 +55,16 @@ init_predictor()
   //
   //TODO: Initialize Branch Predictor Data Structures
   //
+  bufferSize = (int) pow(2, histBits);
+  uint8_t counters[bufferSize];
+  branchHistoryRegister = branchHistoryRegister & (0 << histBits);
+  printf("pred here");
+  
+  // strong not taken 0, weak not taken 1, weak taken 2, strong taken 3
+  for (int i = 0; i < bufferSize; i++){
+    counters[i] = 1;
+  }
+
 }
 
 // Make a prediction for conditional branch instruction at PC 'pc'
@@ -68,6 +83,13 @@ make_prediction(uint32_t pc)
     case STATIC:
       return TAKEN;
     case GSHARE:
+      
+      counter_idx = pc ^ branchHistoryRegister;
+      uint32_t pred = counters[counter_idx % bufferSize];
+      if (pred < 2) 
+        return NOTTAKEN;
+      else
+        return TAKEN;
     case TOURNAMENT:
     case CUSTOM:
     default:
@@ -88,4 +110,19 @@ train_predictor(uint32_t pc, uint8_t outcome)
   //
   //TODO: Implement Predictor training
   //
+  uint32_t counter_idx = pc ^ branchHistoryRegister;
+  uint32_t pred = counters[counter_idx % bufferSize];
+  if (outcome == TAKEN){
+    if (pred < 3){
+      pred += 1;
+    }
+  }
+  else{
+    if (pred > 0){
+      pred -= 1;
+    }
+  }
+  counters[counter_idx % bufferSize] = pred;
+  branchHistoryRegister = branchHistoryRegister << 1;
+  branchHistoryRegister = branchHistoryRegister | outcome;
 }

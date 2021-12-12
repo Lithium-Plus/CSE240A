@@ -98,10 +98,10 @@ main(int argc, char *argv[])
       }
     } else {
       // Use as input file
+      printf("here main");
       stream = fopen(argv[i], "r");
     }
   }
-
   // Initialize the predictor
   init_predictor();
 
