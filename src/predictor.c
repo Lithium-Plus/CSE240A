@@ -13,16 +13,16 @@
 // TODO:Student Information
 //
 const char *studentName = "NAME";
-const char *studentID   = "PID";
-const char *email       = "EMAIL";
+const char *studentID = "PID";
+const char *email = "EMAIL";
 
 //------------------------------------//
 //      Predictor Configuration       //
 //------------------------------------//
 
 // Handy Global for use in output routines
-const char *bpName[4] = { "Static", "Gshare",
-                          "Tournament", "Custom" };
+const char *bpName[4] = {"Static", "Gshare",
+                         "Tournament", "Custom"};
 
 int ghistoryBits; // Number of bits used for Global History
 int lhistoryBits; // Number of bits used for Local History
@@ -45,10 +45,10 @@ uint32_t counter_idx;
 // uint8_t* counters;
 uint8_t counters[8192];
 
-uint8_t* localPHT_tourament;
-uint8_t* globalPHT_tourament;
-uint32_t* indexTable_tourament;
-uint8_t* chooserTable_tourament;
+uint8_t *localPHT_tourament;
+uint8_t *globalPHT_tourament;
+uint32_t *indexTable_tourament;
+uint8_t *chooserTable_tourament;
 int ghr_tourament;
 //------------------------------------//
 //        Predictor Functions         //
@@ -56,20 +56,19 @@ int ghr_tourament;
 
 // Initialize the predictor
 //
-void init_predictor()
-{
-  //
-  //TODO: Initialize Branch Predictor Data Structures
-  //
-  bufferSize = (int) pow(2, histBits);
-  uint8_t counters[bufferSize];
-  branchHistoryRegister = branchHistoryRegister & (0 << histBits);
-  printf("pred here");
-  
-  // strong not taken 0, weak not taken 1, weak taken 2, strong taken 3
-  for (int i = 0; i < bufferSize; i++){
-    counters[i] = 1;
-  }
+void init_predictor() {
+    //
+    //TODO: Initialize Branch Predictor Data Structures
+    //
+    bufferSize = (int) pow(2, histBits);
+    uint8_t counters[bufferSize];
+    branchHistoryRegister = branchHistoryRegister & (0 << histBits);
+    printf("pred here");
+
+    // strong not taken 0, weak not taken 1, weak taken 2, strong taken 3
+    for (int i = 0; i < bufferSize; i++) {
+        counters[i] = 1;
+    }
 
 }
 
@@ -79,10 +78,10 @@ void init_tourament() {
     int globalSize = getSize(ghistoryBits);
     int indexTableSize = getSize(pcIndexBits);
 
-    localPHT_tourament = (uint8_t*)malloc (localSize * sizeof(uint8_t));
-    globalPHT_tourament = (uint8_t*)malloc (globalSize * sizeof(uint8_t));
-    indexTable_tourament = (uint32_t*)malloc (indexTableSize * sizeof(uint32_t));
-    chooserTable_tourament = (uint8_t*)malloc (globalSize * sizeof(uint8_t));
+    localPHT_tourament = (uint8_t *) malloc(localSize * sizeof(uint8_t));
+    globalPHT_tourament = (uint8_t *) malloc(globalSize * sizeof(uint8_t));
+    indexTable_tourament = (uint32_t *) malloc(indexTableSize * sizeof(uint32_t));
+    chooserTable_tourament = (uint8_t *) malloc(globalSize * sizeof(uint8_t));
 
     for (int i = 0; i < localSize; i++) {
         localPHT_tourament[i] = WN;
@@ -105,34 +104,34 @@ void init_tourament() {
 // Returning TAKEN indicates a prediction of taken; returning NOTTAKEN
 // indicates a prediction of not taken
 //
-uint8_t make_prediction(uint32_t pc)
-{
-  //
-  //TODO: Implement prediction scheme
-  //
+uint8_t make_prediction(uint32_t pc) {
+    //
+    //TODO: Implement prediction scheme
+    //
 
-  // Make a prediction based on the bpType
-  switch (bpType) {
-    case STATIC:
-      return TAKEN;
-    case GSHARE:
-      
-      counter_idx = pc ^ branchHistoryRegister;
-      uint8_t pred = counters[counter_idx % bufferSize];
-      if (pred < 2) 
-        return NOTTAKEN;
-      else
-        return TAKEN;
-    case TOURNAMENT:
-        return predict_tourament(pc);
-    case CUSTOM:
-    default:
-      break;
-  }
+    // Make a prediction based on the bpType
+    switch (bpType) {
+        case STATIC:
+            return TAKEN;
+        case GSHARE:
 
-  // If there is not a compatable bpType then return NOTTAKEN
-  return NOTTAKEN;
+            counter_idx = pc ^ branchHistoryRegister;
+            uint8_t pred = counters[counter_idx % bufferSize];
+            if (pred < 2)
+                return NOTTAKEN;
+            else
+                return TAKEN;
+        case TOURNAMENT:
+            return predict_tourament(pc);
+        case CUSTOM:
+        default:
+            break;
+    }
+
+    // If there is not a compatable bpType then return NOTTAKEN
+    return NOTTAKEN;
 }
+
 uint8_t predict_tourament(uint32_t pc) {
     uint32_t pcMask = getMask(pcIndexBits);
 
@@ -170,7 +169,7 @@ void train_tourament(uint32_t pc, uint8_t outcome) {
     uint32_t globalHistoryMask = getMask(ghistoryBits);
     int globalPHTIndex = ghr_tourament & globalHistoryMask;
     int globalPrediction = globalPHT_tourament[globalPHTIndex];
-    int globalResult = (globalPrediction <= WN) ? NOTTAKEN: TAKEN;
+    int globalResult = (globalPrediction <= WN) ? NOTTAKEN : TAKEN;
 
     globalPHT_tourament[globalPHTIndex] = updateTwoBit(globalPHT_tourament[globalPHTIndex], outcome);
 
@@ -197,26 +196,24 @@ void train_tourament(uint32_t pc, uint8_t outcome) {
 // indicates that the branch was not taken)
 //
 void
-train_predictor(uint32_t pc, uint8_t outcome)
-{
-  //
-  //TODO: Implement Predictor training
-  //
-  uint32_t counter_idx = pc ^ branchHistoryRegister;
-  uint32_t pred = counters[counter_idx % bufferSize];
-  if (outcome == TAKEN){
-    if (pred < 3){
-      pred += 1;
+train_predictor(uint32_t pc, uint8_t outcome) {
+    //
+    //TODO: Implement Predictor training
+    //
+    uint32_t counter_idx = pc ^ branchHistoryRegister;
+    uint32_t pred = counters[counter_idx % bufferSize];
+    if (outcome == TAKEN) {
+        if (pred < 3) {
+            pred += 1;
+        }
+    } else {
+        if (pred > 0) {
+            pred -= 1;
+        }
     }
-  }
-  else{
-    if (pred > 0){
-      pred -= 1;
-    }
-  }
-  counters[counter_idx % bufferSize] = pred;
-  branchHistoryRegister = branchHistoryRegister << 1;
-  branchHistoryRegister = branchHistoryRegister | outcome;
+    counters[counter_idx % bufferSize] = pred;
+    branchHistoryRegister = branchHistoryRegister << 1;
+    branchHistoryRegister = branchHistoryRegister | outcome;
 }
 
 
