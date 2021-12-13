@@ -38,6 +38,12 @@ extern const char *bpName[];
 #define WT  2			// predict T, weak taken
 #define ST  3			// predict T, strong taken
 
+//Chooser Table
+#define SG 0
+#define WG 1
+#define WL 2
+#define SL 3
+
 //------------------------------------//
 //      Predictor Configuration       //
 //------------------------------------//
@@ -50,21 +56,27 @@ extern int verbose;
 //------------------------------------//
 //    Predictor Function Prototypes   //
 //------------------------------------//
+uint8_t updateTwoBit(uint8_t currentState, uint8_t outcome);
+uint32_t getMask(uint32_t bit);
+uint32_t getSize(uint32_t bit);
 
 // Initialize the predictor
 //
 void init_predictor();
+void init_tourament();
 
 // Make a prediction for conditional branch instruction at PC 'pc'
 // Returning TAKEN indicates a prediction of taken; returning NOTTAKEN
 // indicates a prediction of not taken
 //
 uint8_t make_prediction(uint32_t pc);
+uint8_t predict_tourament(uint32_t pc);
 
 // Train the predictor the last executed branch at PC 'pc' and with
 // outcome 'outcome' (true indicates that the branch was taken, false
 // indicates that the branch was not taken)
 //
 void train_predictor(uint32_t pc, uint8_t outcome);
+void train_tourament(uint32_t pc, uint8_t outcome);
 
 #endif
