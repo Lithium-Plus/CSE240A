@@ -50,6 +50,13 @@ uint8_t *globalPHT_tourament;
 uint32_t *indexTable_tourament;
 uint8_t *chooserTable_tourament;
 int ghr_tourament;
+
+// Custom Data structure
+uint8_t* localPHT_Custom;
+uint8_t* chooserTable_Custom;
+uint8_t* globalPHT_Custom;
+uint32_t ghr_Custom;
+
 //------------------------------------//
 //        Predictor Functions         //
 //------------------------------------//
@@ -100,6 +107,31 @@ void init_tourament() {
     }
 }
 
+void init_custom() {
+    ghistoryBits = ghistoryBits_Custom;
+    lhistoryBits = lhistoryBits_Custom;
+
+    ghr_Custom = 0;
+
+    int globalSize = getSize(ghistoryBits);
+    globalPHT_Custom = (uint8_t*)malloc(globalSize * sizeof(uint8_t));
+    for (int i = 0; i < globalSize ; i++) {
+        globalPHT_Custom[i] = WN;
+    }
+
+    int localSize = getSize(lhistoryBits);
+    localPHT_Custom = (uint8_t*)malloc(localSize * sizeof(uint8_t));
+    for (int i = 0; i < localSize; i++) {
+        localPHT_Custom[i] = WN;
+    }
+
+    int chooserSize = getSize(chooserBits_Custom);
+    chooserTable_Custom = (uint8_t*)malloc(chooserSize * sizeof(uint8_t));
+    for (int i = 0; i < chooserSize; i++) {
+        chooserTable_Custom[i] = WG;
+    }
+}
+
 // Make a prediction for conditional branch instruction at PC 'pc'
 // Returning TAKEN indicates a prediction of taken; returning NOTTAKEN
 // indicates a prediction of not taken
@@ -124,6 +156,7 @@ uint8_t make_prediction(uint32_t pc) {
         case TOURNAMENT:
             return predict_tourament(pc);
         case CUSTOM:
+            return predict_custom(pc);
         default:
             break;
     }
@@ -191,6 +224,33 @@ void train_tourament(uint32_t pc, uint8_t outcome) {
 
 }
 
+uint8_t predict_custom(uint32_t pc) {
+    uint8_t localPredict;
+    uint32_t localMask = getMask(lhistoryBits);
+    uint32_t local_pht_index = (pc >> 2) & localMask;
+    localPredict = localPHT_Custom[local_pht_index];
+
+
+    uint8_t globalPredict;
+    uint32_t globalMask = getMask(ghistoryBits);
+    uint32_t global_pht_index = ((pc>>2) & globalMask) ^ ghr_Custom;
+    globalPredict = globalPHT_Custom[global_pht_index];
+
+    uint32_t chooserMask = getMask(chooserBits_Custom);
+    uint32_t chooserIndex = ghr_Custom & chooserMask;
+    uint8_t chooser = chooserTable_Custom[chooserIndex];
+
+
+    //printf("globalPredict: %d, localPredict: %d, chooser: %d\n", globalPredict, localPredict, chooser);
+
+    if (chooser <= WG) {
+        return (globalPredict <= WN) ? NOTTAKEN : TAKEN;
+    } else {
+        return (localPredict <= WN) ? NOTTAKEN : TAKEN;
+    }
+
+}
+
 // Train the predictor the last executed branch at PC 'pc' and with
 // outcome 'outcome' (true indicates that the branch was taken, false
 // indicates that the branch was not taken)
@@ -200,6 +260,12 @@ train_predictor(uint32_t pc, uint8_t outcome) {
     //
     //TODO: Implement Predictor training
     //
+    if (bpType == TOURNAMENT) {
+        return train_tourament(pc, outcome);
+    } else if (bpType == CUSTOM) {
+        return train_custom(pc, outcome);
+    }
+
     uint32_t counter_idx = pc ^ branchHistoryRegister;
     uint32_t pred = counters[counter_idx % bufferSize];
     if (outcome == TAKEN) {
@@ -216,6 +282,54 @@ train_predictor(uint32_t pc, uint8_t outcome) {
     branchHistoryRegister = branchHistoryRegister | outcome;
 }
 
+void train_custom(uint32_t pc, uint8_t outcome) {
+    uint32_t localMask = getMask(lhistoryBits);
+    uint32_t local_pht_index = ( (pc>>2) & localMask);
+
+    uint32_t globalMask = getMask(ghistoryBits);
+    uint32_t global_pht_index = ( (pc>>2) & globalMask) ^ ghr_Custom;
+
+    uint32_t chooserMask = getMask(chooserBits_Custom);
+    uint32_t chooserIndex = ghr_Custom & chooserMask;
+
+
+    // 1. Train Local
+    uint8_t localPredict = localPHT_Custom[local_pht_index];
+    uint8_t localResult = (localPredict <= WN) ? NOTTAKEN : TAKEN;
+    localPHT_Custom[local_pht_index] = updateTwoBit(localPredict, outcome);
+
+
+    // 2. Train gSHARE
+    uint8_t globalPredict = globalPHT_Custom[global_pht_index];
+    uint8_t globalResult = (globalPredict <= WN) ? NOTTAKEN : TAKEN;
+    globalPHT_Custom[global_pht_index] = updateTwoBit(globalPredict, outcome);
+
+
+    // 3. Train chooserTable
+    if (globalResult != localResult) {
+        uint8_t choice = chooserTable_Custom[chooserIndex];
+
+        if (globalResult == outcome) {
+            if (choice != SG) {
+                chooserTable_Custom[chooserIndex] = choice - 1;
+            }
+        } else {
+            if (choice != SL) {
+                chooserTable_Custom[chooserIndex] = choice + 1;
+            }
+        }
+    }
+
+    //Update ghr
+    ghr_Custom = ( (ghr_Custom << 1) | outcome) & globalMask;
+
+
+    //printf("globalResult: %d, localResult: %d \n", globalResult, localResult);
+    //printf("localPHT_Custom[%d]: %d; pht_gShare[%d]: %d, chooserTable_Custom[%d]: %d, outcome: %d, globalResult: %d, localResult: %d \n", local_pht_index, localPHT_Custom[local_pht_index], global_pht_index, pht_gShare[global_pht_index], chooserIndex, chooserTable_Custom[chooserIndex], outcome, globalResult, localResult);
+
+
+
+}
 
 uint32_t getMask(uint32_t bit) {
     return (1 << bit) - 1;

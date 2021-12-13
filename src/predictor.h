@@ -44,6 +44,11 @@ extern const char *bpName[];
 #define WL 2
 #define SL 3
 
+// Custom Setup
+#define ghistoryBits_Custom 14
+#define lhistoryBits_Custom 12
+#define chooserBits_Custom 13
+
 //------------------------------------//
 //      Predictor Configuration       //
 //------------------------------------//
@@ -64,6 +69,7 @@ uint32_t getSize(uint32_t bit);
 //
 void init_predictor();
 void init_tourament();
+void init_custom();
 
 // Make a prediction for conditional branch instruction at PC 'pc'
 // Returning TAKEN indicates a prediction of taken; returning NOTTAKEN
@@ -71,6 +77,7 @@ void init_tourament();
 //
 uint8_t make_prediction(uint32_t pc);
 uint8_t predict_tourament(uint32_t pc);
+uint8_t predict_custom(uint32_t pc);
 
 // Train the predictor the last executed branch at PC 'pc' and with
 // outcome 'outcome' (true indicates that the branch was taken, false
@@ -78,5 +85,6 @@ uint8_t predict_tourament(uint32_t pc);
 //
 void train_predictor(uint32_t pc, uint8_t outcome);
 void train_tourament(uint32_t pc, uint8_t outcome);
+void train_custom(uint32_t pc, uint8_t outcome);
 
 #endif
