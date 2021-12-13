@@ -44,7 +44,6 @@ uint8_t histBits = 13;
 uint32_t counter_idx;
 // uint8_t* counters;
 uint8_t counters[8192];
-uint8_t* counters;
 
 uint8_t* localPHT_tourament;
 uint8_t* globalPHT_tourament;
