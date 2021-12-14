@@ -67,15 +67,25 @@ void init_predictor() {
     //
     //TODO: Initialize Branch Predictor Data Structures
     //
-    bufferSize = (int) pow(2, histBits);
-    uint8_t counters[bufferSize];
-    branchHistoryRegister = branchHistoryRegister & (0 << histBits);
-    printf("pred here");
-
-    // strong not taken 0, weak not taken 1, weak taken 2, strong taken 3
-    for (int i = 0; i < bufferSize; i++) {
-        counters[i] = 1;
+    switch (bpType) {
+      case GSHARE:
+        bufferSize = (int) pow(2, histBits);
+        // uint8_t counters[bufferSize];
+        branchHistoryRegister = branchHistoryRegister & (0 << histBits);
+        // strong not taken 0, weak not taken 1, weak taken 2, strong taken 3
+        for (int i = 0; i < bufferSize; i++) {
+            counters[i] = 1;
+        }
+      case TOURNAMENT:
+          printf("before init");
+          init_tourament();
+          printf("after init");
+      case CUSTOM:
+          init_custom();
+      default:
+          break;
     }
+    
 
 }
 

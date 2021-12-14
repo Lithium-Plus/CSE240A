@@ -98,13 +98,14 @@ main(int argc, char *argv[])
       }
     } else {
       // Use as input file
-      printf("here main");
       stream = fopen(argv[i], "r");
     }
   }
   // Initialize the predictor
+  printf("main init");
   init_predictor();
-
+  // init_custom();
+  // printf("after init");
   uint32_t num_branches = 0;
   uint32_t mispredictions = 0;
   uint32_t pc = 0;
